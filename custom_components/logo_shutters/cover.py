@@ -167,6 +167,7 @@ class LogoCover(CoverEntity, RestoreEntity):
         self._sensor_up_active: bool = False
         self._sensor_down_active: bool = False
         self._movement_task: asyncio.Task | None = None
+        self._movement_from_sensor: bool = False
         self._movement_start: float | None = None
         self._movement_start_position: float = float(self._position)
         self._movement_target: float | None = None
@@ -257,7 +258,7 @@ class LogoCover(CoverEntity, RestoreEntity):
         duration = self._open_time if direction_open else self._close_time
 
         await self._fire_direction_switch(direction_open)
-        await self._start_movement(target, duration, direction_open)
+        await self._start_movement(target, duration, direction_open, started_by_sensor=False)
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
@@ -282,13 +283,21 @@ class LogoCover(CoverEntity, RestoreEntity):
             context=self._context,
         )
 
-    async def _start_movement(self, target: int, duration: float, opening: bool) -> None:
+    async def _start_movement(
+        self,
+        target: int,
+        duration: float,
+        opening: bool,
+        *,
+        started_by_sensor: bool,
+    ) -> None:
         """Track movement towards a target position."""
         self._movement_start = monotonic()
         self._movement_start_position = float(self._position)
         self._movement_target = float(target)
         self._movement_expected_duration = duration
         self._last_direction_opening = opening
+        self._movement_from_sensor = started_by_sensor
         self._set_motion(opening, not opening)
 
         if self._movement_task:
@@ -323,6 +332,9 @@ class LogoCover(CoverEntity, RestoreEntity):
             self._set_motion(self._sensor_up_active, self._sensor_down_active)
         else:
             self._set_motion(False, False)
+            # For HA-initiated moves, send the stop sequence once the target is reached.
+            if not self._movement_from_sensor:
+                await self._execute_stop_sequence(self._last_direction_opening)
         self._movement_task = None
         self.async_write_ha_state()
 
@@ -338,6 +350,7 @@ class LogoCover(CoverEntity, RestoreEntity):
         self._movement_start = None
         self._movement_target = None
         self._movement_expected_duration = None
+        self._movement_from_sensor = False
         self._set_motion(False, False)
 
     async def _execute_stop_sequence(self, opening: bool | None) -> None:
@@ -421,7 +434,7 @@ class LogoCover(CoverEntity, RestoreEntity):
             await self._cancel_movement(update_position=True)
             target = 100 if opening else 0
             duration = self._open_time if opening else self._close_time
-            await self._start_movement(target, duration, opening)
+            await self._start_movement(target, duration, opening, started_by_sensor=True)
         else:
             # Only stop tracking if no motion sensor reports movement.
             if not self._sensor_up_active and not self._sensor_down_active:
