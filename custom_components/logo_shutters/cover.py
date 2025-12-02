@@ -438,21 +438,24 @@ class LogoCover(CoverEntity, RestoreEntity):
         else:
             self._sensor_down_active = is_on
 
-        # When a motion sensor turns on, start tracking a physical move toward 100%/0%.
+        # When a motion sensor turns on, treat it as a physical move only if we are not already tracking.
         if is_on:
-            await self._cancel_movement(update_position=True)
-            target = 100 if opening else 0
-            full_duration = self._open_time if opening else self._close_time
-            scaled_duration = full_duration * abs(target - self._position) / 100 or 0.1
-            await self._start_movement(
-                target,
-                scaled_duration,
-                opening,
-                started_by_sensor=True,
-            )
+            if self._movement_task is None:
+                target = 100 if opening else 0
+                full_duration = self._open_time if opening else self._close_time
+                scaled_duration = full_duration * abs(target - self._position) / 100 or 0.1
+                await self._start_movement(
+                    target,
+                    scaled_duration,
+                    opening,
+                    started_by_sensor=True,
+                )
         else:
             # Only stop tracking if no motion sensor reports movement.
             if not self._sensor_up_active and not self._sensor_down_active:
-                await self._cancel_movement(update_position=True)
+                if self._movement_from_sensor:
+                    await self._cancel_movement(update_position=True)
+                else:
+                    self._set_motion(False, False)
 
         self.async_write_ha_state()
