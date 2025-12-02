@@ -23,6 +23,7 @@ from homeassistant.const import (
     CONF_NAME,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
@@ -37,6 +38,9 @@ from .const import (
     CONF_OPEN_TIME,
     CONF_CLOSE_TIME,
     CONF_STOP_SEQUENCE,
+    CONF_STOP_SEQUENCE_UP,
+    CONF_STOP_SEQUENCE_DOWN,
+    CONF_SHADE_POSITION,
     DOMAIN,
 )
 
@@ -113,6 +117,8 @@ async def async_setup_entry(
     """Set up cover entities from config entry."""
     entity = LogoCover(hass, entry)
     async_add_entities([entity], update_before_add=True)
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service("set_shade", {}, "async_set_shade")
 
 
 class LogoCover(CoverEntity, RestoreEntity):
@@ -143,9 +149,16 @@ class LogoCover(CoverEntity, RestoreEntity):
         self._initial_position: int = _clamp_position(
             float(data.get(CONF_INITIAL_POSITION, 0))
         )
-        self._stop_sequence: list[StopStep] = _parse_stop_sequence(
-            data.get(CONF_STOP_SEQUENCE, "")
+        self._shade_position: int = _clamp_position(
+            float(data.get(CONF_SHADE_POSITION, 40))
         )
+        common_stop_seq = _parse_stop_sequence(data.get(CONF_STOP_SEQUENCE, ""))
+        self._stop_sequence_up: list[StopStep] = _parse_stop_sequence(
+            data.get(CONF_STOP_SEQUENCE_UP, "")
+        ) or common_stop_seq
+        self._stop_sequence_down: list[StopStep] = _parse_stop_sequence(
+            data.get(CONF_STOP_SEQUENCE_DOWN, "")
+        ) or common_stop_seq
 
         self._position: int = self._initial_position
         self._is_opening: bool = False
@@ -157,6 +170,7 @@ class LogoCover(CoverEntity, RestoreEntity):
         self._movement_start_position: float = float(self._position)
         self._movement_target: float | None = None
         self._movement_expected_duration: float | None = None
+        self._last_direction_opening: bool | None = None
 
         self._attr_name = self._name
         self._attr_unique_id = entry.entry_id
@@ -241,10 +255,15 @@ class LogoCover(CoverEntity, RestoreEntity):
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
+        direction = self._active_or_last_direction()
         await self._cancel_movement(update_position=True)
-        await self._execute_stop_sequence()
+        await self._execute_stop_sequence(direction)
         self._set_motion(False, False)
         self.async_write_ha_state()
+
+    async def async_set_shade(self, **kwargs: Any) -> None:
+        """Move cover to the configured shade position."""
+        await self.async_set_cover_position(**{ATTR_POSITION: self._shade_position})
 
     async def _fire_direction_switch(self, opening: bool) -> None:
         """Trigger the configured switch to start movement."""
@@ -263,6 +282,7 @@ class LogoCover(CoverEntity, RestoreEntity):
         self._movement_start_position = float(self._position)
         self._movement_target = float(target)
         self._movement_expected_duration = duration
+        self._last_direction_opening = opening
         self._set_motion(opening, not opening)
 
         if self._movement_task:
@@ -314,9 +334,15 @@ class LogoCover(CoverEntity, RestoreEntity):
         self._movement_expected_duration = None
         self._set_motion(False, False)
 
-    async def _execute_stop_sequence(self) -> None:
+    async def _execute_stop_sequence(self, opening: bool | None) -> None:
         """Run the configured stop sequence, or a safe default."""
-        if not self._stop_sequence:
+        sequence: list[StopStep] = []
+        if opening is True:
+            sequence = self._stop_sequence_up
+        elif opening is False:
+            sequence = self._stop_sequence_down
+
+        if not sequence:
             await self.hass.services.async_call(
                 "switch",
                 SERVICE_TURN_OFF,
@@ -326,7 +352,7 @@ class LogoCover(CoverEntity, RestoreEntity):
             )
             return
 
-        for step in self._stop_sequence:
+        for step in sequence:
             data = dict(step.service_data)
             if step.entity_id and ATTR_ENTITY_ID not in data:
                 data[ATTR_ENTITY_ID] = step.entity_id
@@ -359,6 +385,14 @@ class LogoCover(CoverEntity, RestoreEntity):
         """Update motion flags."""
         self._is_opening = opening
         self._is_closing = closing
+
+    def _active_or_last_direction(self) -> bool | None:
+        """Return the current or last movement direction (True=open, False=close)."""
+        if self._sensor_up_active or self._is_opening:
+            return True
+        if self._sensor_down_active or self._is_closing:
+            return False
+        return self._last_direction_opening
 
     async def _handle_motion_sensor(self, event) -> None:
         """Handle updates from movement status sensors."""

@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+custom_components/logo_shutters/__pycache__/

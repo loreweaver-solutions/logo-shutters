@@ -18,6 +18,9 @@ from .const import (
     CONF_OPEN_TIME,
     CONF_CLOSE_TIME,
     CONF_STOP_SEQUENCE,
+    CONF_STOP_SEQUENCE_UP,
+    CONF_STOP_SEQUENCE_DOWN,
+    CONF_SHADE_POSITION,
     DOMAIN,
 )
 
@@ -49,7 +52,17 @@ def _base_schema(defaults: dict[str, object]) -> vol.Schema:
                 CONF_INITIAL_POSITION,
                 default=defaults.get(CONF_INITIAL_POSITION, 0),
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+            vol.Optional(
+                CONF_SHADE_POSITION,
+                default=defaults.get(CONF_SHADE_POSITION, 40),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
             vol.Optional(CONF_STOP_SEQUENCE, default=defaults.get(CONF_STOP_SEQUENCE, "")): str,
+            vol.Optional(
+                CONF_STOP_SEQUENCE_UP, default=defaults.get(CONF_STOP_SEQUENCE_UP, "")
+            ): str,
+            vol.Optional(
+                CONF_STOP_SEQUENCE_DOWN, default=defaults.get(CONF_STOP_SEQUENCE_DOWN, "")
+            ): str,
         }
     )
 
