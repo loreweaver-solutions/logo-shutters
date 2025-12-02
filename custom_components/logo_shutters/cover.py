@@ -334,13 +334,16 @@ class LogoCover(CoverEntity, RestoreEntity):
             return
 
         self._position = _clamp_position(self._movement_target)
+
+        # For HA-initiated moves, always run the stop sequence when we reach the target,
+        # even if motion sensors report movement. Sensors should flip off once stopped.
+        if not self._movement_from_sensor:
+            await self._execute_stop_sequence(self._last_direction_opening)
+
         if self._sensor_up_active or self._sensor_down_active:
             self._set_motion(self._sensor_up_active, self._sensor_down_active)
         else:
             self._set_motion(False, False)
-            # For HA-initiated moves, send the stop sequence once the target is reached.
-            if not self._movement_from_sensor:
-                await self._execute_stop_sequence(self._last_direction_opening)
         self._movement_task = None
         self.async_write_ha_state()
 
