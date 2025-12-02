@@ -1,0 +1,41 @@
+{
+  "title": "LOGO Shutters",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add cover",
+        "description": "Configure one Siemens LOGO driven cover. Add multiple entries for multiple covers.",
+        "data": {
+          "name": "Cover name",
+          "open_switch": "Open/up switch entity",
+          "close_switch": "Close/down switch entity",
+          "moving_up_sensor": "Moving up binary sensor (optional)",
+          "moving_down_sensor": "Moving down binary sensor (optional)",
+          "open_time": "Time to fully open (seconds)",
+          "close_time": "Time to fully close (seconds)",
+          "initial_position": "Initial position after restart (0-100)",
+          "stop_sequence": "Custom stop sequence (YAML list of steps)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Adjust cover settings",
+        "description": "Update entity IDs, timings, or stop sequence for this cover.",
+        "data": {
+          "name": "Cover name",
+          "open_switch": "Open/up switch entity",
+          "close_switch": "Close/down switch entity",
+          "moving_up_sensor": "Moving up binary sensor (optional)",
+          "moving_down_sensor": "Moving down binary sensor (optional)",
+          "open_time": "Time to fully open (seconds)",
+          "close_time": "Time to fully close (seconds)",
+          "initial_position": "Initial position after restart (0-100)",
+          "stop_sequence": "Custom stop sequence (YAML list of steps)"
+        }
+      }
+    }
+  }
+}

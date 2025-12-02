@@ -1,0 +1,12 @@
+{
+  "domain": "logo_shutters",
+  "name": "LOGO Shutters",
+  "version": "0.1.0",
+  "documentation": "https://github.com/loreweaver-solutions/logo-shutters",
+  "issue_tracker": "https://github.com/loreweaver-solutions/logo-shutters/issues",
+  "integration_type": "device",
+  "codeowners": ["@loreweaver-solutions"],
+  "requirements": [],
+  "dependencies": [],
+  "config_flow": true
+}
