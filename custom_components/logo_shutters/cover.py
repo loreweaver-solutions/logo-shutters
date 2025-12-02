@@ -126,6 +126,7 @@ class LogoCover(CoverEntity, RestoreEntity):
 
     _attr_should_poll = False
     _attr_device_class = CoverDeviceClass.SHUTTER
+    _attr_is_closed: bool | None = None
     _attr_supported_features = (
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
@@ -200,6 +201,11 @@ class LogoCover(CoverEntity, RestoreEntity):
     def is_closing(self) -> bool | None:
         """Return if the cover is closing."""
         return self._is_closing
+
+    @property
+    def is_closed(self) -> bool | None:
+        """Return if the cover is fully closed."""
+        return self._position == 0
 
     async def async_added_to_hass(self) -> None:
         """Restore state and attach listeners."""

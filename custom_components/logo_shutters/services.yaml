@@ -1,0 +1,7 @@
+set_shade:
+  name: Set shade position
+  description: Move the cover to the configured shade position.
+  target:
+    entity:
+      domain: cover
+      integration: logo_shutters
