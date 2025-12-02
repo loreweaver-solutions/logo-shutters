@@ -80,8 +80,9 @@ class LogoShuttersFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(step_id="user", data_schema=_base_schema({}), errors=errors)
 
+    @staticmethod
     @callback
-    def async_get_options_flow(self, config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
         """Return the options flow."""
         return LogoShuttersOptionsFlow(config_entry)
 
