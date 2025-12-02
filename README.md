@@ -8,6 +8,7 @@ Custom cover platform for Siemens LOGO! based shutter/covers driven by self-hold
 - Optional binary sensors for **moving up/down** feedback; when provided, manual/physical moves are tracked as motion starts/stops
 - Time-based position tracking with configurable open/close durations
 - Optional initial position restore value
+- Optional overrun time at fully open/closed for motor settle
 - Configurable stop sequences (separate for up/down; optional common fallback)
 - Configurable shade position + entity service `logo_shutters.set_shade`
 - Fully HACS compatible

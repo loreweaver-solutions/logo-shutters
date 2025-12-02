@@ -15,6 +15,7 @@
           "close_time": "Time to fully close (seconds)",
           "initial_position": "Initial position after restart (0-100)",
           "shade_position": "Shade position (%) used by service",
+          "end_overrun": "Extra run time at fully open/closed (seconds)",
           "stop_sequence": "Custom stop sequence (applies when direction unknown) (YAML list of steps)",
           "stop_sequence_up": "Stop sequence when stopping up/open movement (YAML list of steps)",
           "stop_sequence_down": "Stop sequence when stopping down/close movement (YAML list of steps)"
@@ -37,6 +38,7 @@
           "close_time": "Time to fully close (seconds)",
           "initial_position": "Initial position after restart (0-100)",
           "shade_position": "Shade position (%) used by service",
+          "end_overrun": "Extra run time at fully open/closed (seconds)",
           "stop_sequence": "Custom stop sequence (applies when direction unknown) (YAML list of steps)",
           "stop_sequence_up": "Stop sequence when stopping up/open movement (YAML list of steps)",
           "stop_sequence_down": "Stop sequence when stopping down/close movement (YAML list of steps)"

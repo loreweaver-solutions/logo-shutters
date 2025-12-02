@@ -41,6 +41,7 @@ from .const import (
     CONF_STOP_SEQUENCE_UP,
     CONF_STOP_SEQUENCE_DOWN,
     CONF_SHADE_POSITION,
+    CONF_END_OVERRUN,
     DOMAIN,
 )
 
@@ -153,6 +154,7 @@ class LogoCover(CoverEntity, RestoreEntity):
         self._shade_position: int = _clamp_position(
             float(data.get(CONF_SHADE_POSITION, 40))
         )
+        self._end_overrun: float = float(data.get(CONF_END_OVERRUN, 0))
         common_stop_seq = _parse_stop_sequence(data.get(CONF_STOP_SEQUENCE, ""))
         self._stop_sequence_up: list[StopStep] = _parse_stop_sequence(
             data.get(CONF_STOP_SEQUENCE_UP, "")
@@ -335,6 +337,10 @@ class LogoCover(CoverEntity, RestoreEntity):
 
         self._position = _clamp_position(self._movement_target)
 
+        # Overrun for end-stop cushioning, only for HA-initiated moves toward 0/100.
+        if not self._movement_from_sensor:
+            await self._run_overrun_if_needed()
+
         # For HA-initiated moves, always run the stop sequence when we reach the target,
         # even if motion sensors report movement. Sensors should flip off once stopped.
         if not self._movement_from_sensor:
@@ -407,6 +413,15 @@ class LogoCover(CoverEntity, RestoreEntity):
         progress = min(1.0, elapsed / self._movement_expected_duration)
         delta = self._movement_target - self._movement_start_position
         return self._movement_start_position + delta * progress
+
+    async def _run_overrun_if_needed(self) -> None:
+        """Run additional overrun time at fully open/closed targets."""
+        if self._end_overrun <= 0:
+            return
+        if self._movement_target not in (0, 100):
+            return
+        await asyncio.sleep(self._end_overrun)
+        self._position = _clamp_position(self._movement_target)
 
     @callback
     def _set_motion(self, opening: bool, closing: bool) -> None:

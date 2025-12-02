@@ -21,6 +21,7 @@ from .const import (
     CONF_STOP_SEQUENCE_UP,
     CONF_STOP_SEQUENCE_DOWN,
     CONF_SHADE_POSITION,
+    CONF_END_OVERRUN,
     DOMAIN,
 )
 
@@ -56,6 +57,10 @@ def _base_schema(defaults: dict[str, object]) -> vol.Schema:
                 CONF_SHADE_POSITION,
                 default=defaults.get(CONF_SHADE_POSITION, 40),
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+            vol.Optional(
+                CONF_END_OVERRUN,
+                default=defaults.get(CONF_END_OVERRUN, 0),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
             vol.Optional(CONF_STOP_SEQUENCE, default=defaults.get(CONF_STOP_SEQUENCE, "")): str,
             vol.Optional(
                 CONF_STOP_SEQUENCE_UP, default=defaults.get(CONF_STOP_SEQUENCE_UP, "")
