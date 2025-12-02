@@ -255,10 +255,16 @@ class LogoCover(CoverEntity, RestoreEntity):
         await self._cancel_movement(update_position=True)
 
         direction_open = target > self._position
-        duration = self._open_time if direction_open else self._close_time
+        full_duration = self._open_time if direction_open else self._close_time
+        scaled_duration = full_duration * abs(target - self._position) / 100 or 0.1
 
         await self._fire_direction_switch(direction_open)
-        await self._start_movement(target, duration, direction_open, started_by_sensor=False)
+        await self._start_movement(
+            target,
+            scaled_duration,
+            direction_open,
+            started_by_sensor=False,
+        )
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
@@ -433,8 +439,14 @@ class LogoCover(CoverEntity, RestoreEntity):
         if is_on:
             await self._cancel_movement(update_position=True)
             target = 100 if opening else 0
-            duration = self._open_time if opening else self._close_time
-            await self._start_movement(target, duration, opening, started_by_sensor=True)
+            full_duration = self._open_time if opening else self._close_time
+            scaled_duration = full_duration * abs(target - self._position) / 100 or 0.1
+            await self._start_movement(
+                target,
+                scaled_duration,
+                opening,
+                started_by_sensor=True,
+            )
         else:
             # Only stop tracking if no motion sensor reports movement.
             if not self._sensor_up_active and not self._sensor_down_active:
